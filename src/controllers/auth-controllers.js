@@ -2,8 +2,6 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-let refreshTokens = [];
-
 // Generate access token
 const generateAccessToken = (user) => {
     return jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESS_SECRET, {
@@ -44,7 +42,6 @@ export const signInHandler = async (req, res, next) => {
 
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
-        // refreshTokens.push(refreshToken);
 
         await User.findByIdAndUpdate(user._id, { $push: { refreshTokens: refreshToken } });
 
@@ -55,7 +52,7 @@ export const signInHandler = async (req, res, next) => {
 };
 
 // Get current user controller
-export const getCurrentUserController = async (req, res, next) => {
+export const getCurrentUserHandler = async (req, res, next) => {
     try {
         const currentUser = await User.findById(req.user._id);
         res.status(200).json(currentUser);
@@ -65,7 +62,7 @@ export const getCurrentUserController = async (req, res, next) => {
 };
 
 // Refresh token controller
-export const refreshController = async (req, res) => {
+export const refreshHandler = async (req, res) => {
     const currUser = await User.findById(req.params.id);
 
     const refreshToken = req.body.token;
@@ -80,7 +77,6 @@ export const refreshController = async (req, res) => {
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
 
-        // refreshTokens.push(newRefreshToken);
         await User.findByIdAndUpdate(currUser._id, { $push: { refreshTokens: newRefreshToken } });
 
         res.status(200).json({
@@ -88,4 +84,10 @@ export const refreshController = async (req, res) => {
             refreshToken: newRefreshToken,
         });
     });
+};
+
+// Sign out controller
+export const signOutHandler = async (req, res) => {
+    await User.findByIdAndUpdate(req.user._id, { $set: { refreshTokens: [] } });
+    res.status(200).json('You logged out successfully.');
 };

@@ -2,8 +2,9 @@ import { Router } from 'express';
 import {
     signUpHandler,
     signInHandler,
-    getCurrentUserController,
-    refreshController,
+    getCurrentUserHandler,
+    refreshHandler,
+    signOutHandler,
 } from '../controllers/auth-controllers.js';
 import { verifyToken } from '../middlewares/verifyToken.js';
 
@@ -16,9 +17,12 @@ router.post('/signup', signUpHandler);
 router.post('/signin', signInHandler);
 
 // Refresh token route
-router.post('/refresh/:id', refreshController);
+router.post('/refresh/:userId', refreshHandler);
+
+// Sign out route
+router.post('/signout', verifyToken, signOutHandler);
 
 // Get current user route
-router.get('/current-user', verifyToken, getCurrentUserController);
+router.get('/current-user', verifyToken, getCurrentUserHandler);
 
 export default router;
