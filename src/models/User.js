@@ -7,22 +7,29 @@ const UserSchema = new Schema(
         userName: {
             type: String,
             required: true,
+            minlength: 2,
+            maxlength: 100,
             trim: true,
             unique: true,
         },
         firstName: {
             type: String,
             required: true,
+            minlength: 2,
+            maxlength: 100,
             trim: true,
         },
         lastName: {
             type: String,
             required: true,
+            minlength: 2,
+            maxlength: 100,
             trim: true,
         },
         email: {
             type: String,
             required: true,
+            match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address'],
             trim: true,
             unique: true,
         },
@@ -33,7 +40,7 @@ const UserSchema = new Schema(
         },
         role: {
             type: String,
-            default: 'user',
+            default: 'employee',
         },
         refreshTokens: {
             type: Array,

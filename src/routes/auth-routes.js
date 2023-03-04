@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import {
-    signUpHandler,
     signInHandler,
     getCurrentUserHandler,
     refreshHandler,
@@ -9,9 +8,6 @@ import {
 import { verifyToken } from '../middlewares/verifyToken.js';
 
 const router = Router();
-
-// Create user
-router.post('/signup', signUpHandler);
 
 // Sign in
 router.post('/signin', signInHandler);

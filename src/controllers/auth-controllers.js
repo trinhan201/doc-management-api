@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 // Generate access token
 const generateAccessToken = (user) => {
     return jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESS_SECRET, {
-        expiresIn: '30s',
+        expiresIn: '300s',
     });
 };
 
@@ -14,20 +14,6 @@ const generateRefreshToken = (user) => {
     return jwt.sign({ _id: user._id, role: user.role }, process.env.REFRESH_SECRET, {
         expiresIn: '1d',
     });
-};
-
-// Sign up controller
-export const signUpHandler = async (req, res, next) => {
-    try {
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(req.body.password, salt);
-        const newUser = new User({ ...req.body, password: hash });
-
-        await newUser.save();
-        res.status(200).send('User has been created!');
-    } catch (err) {
-        next(err);
-    }
 };
 
 // Sign in controller
