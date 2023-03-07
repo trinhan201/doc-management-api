@@ -4,6 +4,8 @@ import {
     getCurrentUserHandler,
     refreshHandler,
     signOutHandler,
+    forgotPasswordHandler,
+    resetPasswordHandler,
 } from '../controllers/auth-controllers.js';
 import { verifyToken } from '../middlewares/verifyToken.js';
 
@@ -20,5 +22,11 @@ router.post('/signout', verifyToken, signOutHandler);
 
 // Get current user route
 router.get('/current-user', verifyToken, getCurrentUserHandler);
+
+// Forgot password route
+router.post('/forgot-password', forgotPasswordHandler);
+
+// Reset password route
+router.post('/reset-password', resetPasswordHandler);
 
 export default router;
