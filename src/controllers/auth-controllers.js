@@ -6,7 +6,7 @@ import nodeMailer from 'nodemailer';
 // Generate access token
 const generateAccessToken = (user) => {
     return jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESS_SECRET, {
-        expiresIn: '300s',
+        expiresIn: '500s',
     });
 };
 
