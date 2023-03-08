@@ -89,7 +89,7 @@ export const getCurrentUserHandler = async (req, res, next) => {
 
 // Refresh token controller
 export const refreshHandler = async (req, res) => {
-    const currUser = await User.findById(req.params.id);
+    const currUser = await User.findById(req.params.userId);
 
     const refreshToken = req.body.token;
     if (!refreshToken) return res.status(401).json({ code: 401, message: 'You are not authenticated!' });
@@ -98,7 +98,7 @@ export const refreshHandler = async (req, res) => {
     }
     jwt.verify(refreshToken, process.env.REFRESH_SECRET, async (err, user) => {
         err && console.log(err);
-        currUser.refreshTokens = currUser.refreshTokens.filter((token) => token !== refreshToken);
+        // currUser.refreshTokens = currUser.refreshTokens.filter((token) => token !== refreshToken);
 
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);

@@ -18,7 +18,7 @@ export const createUserHandler = async (req, res, next) => {
 // Update user controller
 export const updateUserHandler = async (req, res, next) => {
     try {
-        const updateProp = {
+        const updateProps = {
             userName: req.body.userName,
             firstName: req.body.firstName,
             lastName: req.body.lastName,
@@ -26,7 +26,8 @@ export const updateUserHandler = async (req, res, next) => {
         };
         if (req.user.role === 'admin') {
             try {
-                const userUpdate = await User.findByIdAndUpdate(req.params.userId, updateProp, {
+                updateProps.role = req.body.role;
+                const userUpdate = await User.findByIdAndUpdate(req.params.userId, updateProps, {
                     new: true,
                 });
                 res.status(200).json({ code: 200, message: 'This account has been updated' });
@@ -36,7 +37,7 @@ export const updateUserHandler = async (req, res, next) => {
         } else {
             if (req.params.userId === req.user._id) {
                 try {
-                    const userUpdate = await User.findByIdAndUpdate(req.params.userId, updateProp, { new: true });
+                    const userUpdate = await User.findByIdAndUpdate(req.params.userId, updateProps, { new: true });
                     res.status(200).json({ code: 200, message: 'This account has been updated' });
                 } catch (error) {
                     next(error);
@@ -77,21 +78,35 @@ export const deleteUserHandler = async (req, res, next) => {
 // Change password controller
 export const changePasswordHandler = async (req, res, next) => {
     try {
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(req.body.password, salt);
         const currentUser = await User.findById(req.user._id);
-        const isOldPassword = await bcrypt.compare(req.body.password, currentUser.password);
-        if (!isOldPassword) {
-            await User.findByIdAndUpdate({ _id: req.user._id }, { password: hash }, { new: true });
-            res.status(200).json({
-                code: 200,
-                message: 'Change password successfully',
-            });
-        } else {
+        // Old password from frontend
+        const oldPassword = req.body.oldPassword;
+        // New password from frontend
+        const salt = bcrypt.genSaltSync(10);
+        const newPassword = bcrypt.hashSync(req.body.newPassword, salt);
+        // Check old password from frontend is the same of password in db
+        const isCorrect = await bcrypt.compare(oldPassword, currentUser.password);
+        // Check new password conflict with password in db
+        const isConflict = await bcrypt.compare(req.body.newPassword, currentUser.password);
+
+        if (!isCorrect) {
             res.status(400).json({
                 code: 400,
-                message: 'Password conflict',
+                message: 'Old password is wrong and please try again',
             });
+        } else {
+            if (!isConflict) {
+                await User.findByIdAndUpdate({ _id: req.user._id }, { password: newPassword }, { new: true });
+                res.status(200).json({
+                    code: 200,
+                    message: 'Change password successfully',
+                });
+            } else {
+                res.status(400).json({
+                    code: 400,
+                    message: 'Password conflict',
+                });
+            }
         }
     } catch (error) {
         next(error);
