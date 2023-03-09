@@ -45,10 +45,10 @@ const UserSchema = new Schema(
         refreshTokens: {
             type: Array,
         },
-        resetPasswordToken: {
-            type: String,
-            default: '',
-        },
+        // resetPasswordToken: {
+        //     type: String,
+        //     default: '',
+        // },
     },
     {
         timestamps: true,

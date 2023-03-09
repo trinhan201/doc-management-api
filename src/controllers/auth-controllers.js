@@ -114,7 +114,13 @@ export const refreshHandler = async (req, res) => {
 
 // Sign out controller
 export const signOutHandler = async (req, res) => {
-    await User.findByIdAndUpdate(req.user._id, { $set: { refreshTokens: [] } });
+    const refreshToken = req.body.token;
+    const currUser = await User.findById(req.user._id);
+    let tokenArray = currUser.refreshTokens;
+    array = tokenArray.filter((token) => token !== refreshToken);
+    console.log(tokenArray);
+
+    await User.findByIdAndUpdate(req.user._id, { $set: { refreshTokens: tokenArray } });
     res.status(200).json('You logged out successfully.');
 };
 
@@ -125,7 +131,7 @@ export const forgotPasswordHandler = async (req, res, next) => {
         const userData = await User.findOne({ email: email });
         if (userData) {
             const token = generateResetPasswordToken(userData);
-            await User.updateOne({ email: email }, { $set: { resetPasswordToken: token } });
+            // await User.updateOne({ email: email }, { $set: { resetPasswordToken: token } });
             sendResetPasswordMail(userData.userName, userData.email, token);
             res.status(200).json({ code: 200, message: 'PLease check your inbox of mail and reset your password' });
         } else {
