@@ -1,15 +1,30 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import randomstring from 'randomstring';
+import sendMail from '../utils/email.js';
+
+// Generate verify email token
+const generateVerifyEmailToken = (user, randomPass) => {
+    return jwt.sign({ _id: user._id, password: randomPass }, process.env.VERIFY_EMAIL_SECRET, {
+        expiresIn: '100s',
+    });
+};
 
 // Create user controller
 export const createUserHandler = async (req, res, next) => {
     try {
+        const randomPass = randomstring.generate(7);
         const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(req.body.password, salt);
+        const hash = bcrypt.hashSync(randomPass, salt);
         const newUser = new User({ ...req.body, password: hash });
 
         await newUser.save();
-        res.status(200).json({ code: 200, message: 'User has been created!' });
+        const subject = 'Verify your account';
+        const token = generateVerifyEmailToken(newUser, randomPass);
+        const html = `<p>Click this <a href="${process.env.CLIENT_URL}/api/v1/auth/verify?token=${token}"> link</a> to verify your account`;
+        sendMail(newUser.email, subject, html);
+        res.status(200).json({ code: 200, message: 'Created successfully and verify mail has been sent' });
     } catch (err) {
         next(err);
     }

@@ -6,6 +6,7 @@ import {
     signOutHandler,
     forgotPasswordHandler,
     resetPasswordHandler,
+    verifyHandler,
 } from '../controllers/auth-controllers.js';
 import { verifyToken } from '../middlewares/verifyToken.js';
 
@@ -28,5 +29,8 @@ router.post('/forgot-password', forgotPasswordHandler);
 
 // Reset password route
 router.post('/reset-password', resetPasswordHandler);
+
+// Veify account route
+router.get('/verify', verifyHandler);
 
 export default router;

@@ -1,12 +1,12 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodeMailer from 'nodemailer';
+import sendMail from '../utils/email.js';
 
 // Generate access token
 const generateAccessToken = (user) => {
     return jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESS_SECRET, {
-        expiresIn: '500s',
+        expiresIn: '1500s',
     });
 };
 
@@ -20,39 +20,33 @@ const generateRefreshToken = (user) => {
 // Generate reset password token
 const generateResetPasswordToken = (user) => {
     return jwt.sign({ _id: user._id, email: user.email }, process.env.RESET_PASS_SECRET, {
-        expiresIn: '30s',
+        expiresIn: '300s',
     });
 };
 
-// Send mail
-const sendResetPasswordMail = async (name, email, token) => {
+// Verify account controller
+export const verifyHandler = async (req, res, next) => {
     try {
-        const transporter = nodeMailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            requireTLS: true,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+        const token = req.query.token;
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'For Reset Password',
-            html: `<p> Hello ${name}, Please copy the link and <a href="${process.env.CLIENT_URL}/api/v1/auth/reset-password?token=${token}"> reset your password</a>`,
-        };
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Mail has been sent', info.response);
+        jwt.verify(token, process.env.VERIFY_EMAIL_SECRET, async (err, user) => {
+            if (err) {
+                return res.status(403).json({ code: 403, message: 'Token is not valid or it is expired' });
             }
+
+            await User.updateOne({ _id: user._id }, { $set: { isVerified: true } });
+
+            const currUser = await User.findById(user._id);
+            // Send password to user
+            const subject = 'Get Your Password';
+            const html = `<p> Hello ${currUser.email}, This is your random password ${user.password}</p>
+            <p>Let's change your password for security</p>
+            `;
+            sendMail(currUser.email, subject, html);
+            res.status(200).send('Verified successfully, please check your inbox for password');
         });
     } catch (error) {
-        res.status(400).send(error);
+        next(error);
     }
 };
 
@@ -98,7 +92,6 @@ export const refreshHandler = async (req, res) => {
     }
     jwt.verify(refreshToken, process.env.REFRESH_SECRET, async (err, user) => {
         err && console.log(err);
-        // currUser.refreshTokens = currUser.refreshTokens.filter((token) => token !== refreshToken);
 
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
@@ -117,11 +110,11 @@ export const signOutHandler = async (req, res) => {
     const refreshToken = req.body.token;
     const currUser = await User.findById(req.user._id);
     let tokenArray = currUser.refreshTokens;
-    array = tokenArray.filter((token) => token !== refreshToken);
+    tokenArray = tokenArray.filter((token) => token !== refreshToken);
     console.log(tokenArray);
 
     await User.findByIdAndUpdate(req.user._id, { $set: { refreshTokens: tokenArray } });
-    res.status(200).json('You logged out successfully.');
+    res.status(200).json('You signed out successfully.');
 };
 
 // Forgot password controller
@@ -130,9 +123,10 @@ export const forgotPasswordHandler = async (req, res, next) => {
         const email = req.body.email;
         const userData = await User.findOne({ email: email });
         if (userData) {
+            const subject = 'For Reset Password';
             const token = generateResetPasswordToken(userData);
-            // await User.updateOne({ email: email }, { $set: { resetPasswordToken: token } });
-            sendResetPasswordMail(userData.userName, userData.email, token);
+            const html = `<p> Hello ${userData.userName}, Please copy the link and <a href="${process.env.CLIENT_URL}/api/v1/auth/reset-password?token=${token}"> reset your password</a>`;
+            sendMail(userData.email, subject, html);
             res.status(200).json({ code: 200, message: 'PLease check your inbox of mail and reset your password' });
         } else {
             res.status(200).json({ code: 200, message: 'This email does not exist' });
